@@ -672,7 +672,7 @@ async function runWebSearch(params: {
   if (params.search_lang) {
     url.searchParams.set("search_lang", params.search_lang);
   }
-  if (params.ui_lang) {
+  if (params.ui_lang && params.ui_lang.includes("-")) {
     url.searchParams.set("ui_lang", params.ui_lang);
   }
   if (params.freshness) {
