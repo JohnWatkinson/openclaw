@@ -7,6 +7,7 @@ import { DEFAULT_TIMEOUT_SECONDS, readResponseText, withTimeout } from "./web-sh
 const LEONARDO_API_BASE = "https://cloud.leonardo.ai/api/rest/v1";
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 30; // 60 seconds total
+const DEFAULT_MODEL_ID = "7b592283-e8a7-4c5a-9ba6-d18c31f258b9"; // Lucid Origin
 
 type GeneratedImage = {
   id: string;
@@ -115,6 +116,12 @@ const LeonardoGenerateImageSchema = Type.Object({
         "Visual style preset. Options: FASHION, PHOTOGRAPHY, PORTRAIT, CINEMATIC, CREATIVE. Default: FASHION.",
     }),
   ),
+  model_id: Type.Optional(
+    Type.String({
+      description:
+        "Leonardo model ID to use. Get model IDs from GET /platformModels. Leave unset to use Leonardo's default.",
+    }),
+  ),
 });
 
 export function createLeonardoTool(options?: { config?: OpenClawConfig }): AnyAgentTool | null {
@@ -137,13 +144,15 @@ export function createLeonardoTool(options?: { config?: OpenClawConfig }): AnyAg
         const width = (params["width"] as number | undefined) ?? 1024;
         const height = (params["height"] as number | undefined) ?? 1024;
         const presetStyle = readStringParam(params, "preset_style") ?? "FASHION";
+        const modelId = readStringParam(params, "model_id") ?? DEFAULT_MODEL_ID;
 
-        const body = {
+        const body: Record<string, unknown> = {
           prompt,
           num_images: numImages,
           width,
           height,
           presetStyle,
+          modelId,
         };
 
         const res = await fetch(`${LEONARDO_API_BASE}/generations`, {
