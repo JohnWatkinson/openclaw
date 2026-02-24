@@ -19,6 +19,7 @@ import { createSessionsSendTool } from "./tools/sessions-send-tool.js";
 import { createSessionsSpawnTool } from "./tools/sessions-spawn-tool.js";
 import { createSubagentsTool } from "./tools/subagents-tool.js";
 import { createTtsTool } from "./tools/tts-tool.js";
+import { createLeonardoTool } from "./tools/leonardo-tool.js";
 import { createWebFetchTool, createWebSearchTool } from "./tools/web-tools.js";
 import { resolveWorkspaceRoot } from "./workspace-dir.js";
 
@@ -86,6 +87,9 @@ export function createOpenClawTools(options?: {
   const webFetchTool = createWebFetchTool({
     config: options?.config,
     sandboxed: options?.sandboxed,
+  });
+  const leonardoTool = createLeonardoTool({
+    config: options?.config,
   });
   const messageTool = options?.disableMessageTool
     ? null
@@ -163,6 +167,7 @@ export function createOpenClawTools(options?: {
     ...(webSearchTool ? [webSearchTool] : []),
     ...(webFetchTool ? [webFetchTool] : []),
     ...(imageTool ? [imageTool] : []),
+    ...(leonardoTool ? [leonardoTool] : []),
   ];
 
   const pluginTools = resolvePluginTools({
