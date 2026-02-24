@@ -8,8 +8,6 @@ const LEONARDO_API_BASE = "https://cloud.leonardo.ai/api/rest/v1";
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 30; // 60 seconds total
 
-type LeonardoConfig = NonNullable<NonNullable<OpenClawConfig["tools"]>["leonardo"]>;
-
 type GeneratedImage = {
   id: string;
   url: string;
@@ -28,13 +26,7 @@ type GenerationStatusResponse = {
   };
 };
 
-function resolveLeonardoApiKey(config?: OpenClawConfig): string | undefined {
-  const fromConfig = (config?.tools as Record<string, unknown> | undefined)
-    ?.leonardo as LeonardoConfig | undefined;
-  if (fromConfig && typeof fromConfig === "object" && "apiKey" in fromConfig) {
-    const key = (fromConfig as { apiKey?: string }).apiKey?.trim();
-    if (key) return key;
-  }
+function resolveLeonardoApiKey(_config?: OpenClawConfig): string | undefined {
   return process.env["LEONARDO_API_KEY"]?.trim() || undefined;
 }
 
