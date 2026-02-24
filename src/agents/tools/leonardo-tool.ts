@@ -152,7 +152,6 @@ export function createLeonardoTool(options?: { config?: OpenClawConfig }): AnyAg
           width,
           height,
           presetStyle,
-          alchemy: true,
         };
 
         const res = await fetch(`${LEONARDO_API_BASE}/generations`, {
