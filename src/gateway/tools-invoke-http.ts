@@ -112,16 +112,23 @@ function getErrorMessage(err: unknown): string {
   return String(err);
 }
 
-function isToolInputError(err: unknown): boolean {
+function resolveToolInputErrorStatus(err: unknown): number | null {
   if (err instanceof ToolInputError) {
-    return true;
+    const status = (err as { status?: unknown }).status;
+    return typeof status === "number" ? status : 400;
   }
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "name" in err &&
-    (err as { name?: unknown }).name === "ToolInputError"
-  );
+  if (typeof err !== "object" || err === null || !("name" in err)) {
+    return null;
+  }
+  const name = (err as { name?: unknown }).name;
+  if (name !== "ToolInputError" && name !== "ToolAuthorizationError") {
+    return null;
+  }
+  const status = (err as { status?: unknown }).status;
+  if (typeof status === "number") {
+    return status;
+  }
+  return name === "ToolAuthorizationError" ? 403 : 400;
 }
 
 export async function handleToolsInvokeHttpRequest(
@@ -206,6 +213,8 @@ export async function handleToolsInvokeHttpRequest(
     getHeader(req, "x-openclaw-message-channel") ?? "",
   );
   const accountId = getHeader(req, "x-openclaw-account-id")?.trim() || undefined;
+  const agentTo = getHeader(req, "x-openclaw-message-to")?.trim() || undefined;
+  const agentThreadId = getHeader(req, "x-openclaw-thread-id")?.trim() || undefined;
 
   const {
     agentId,
@@ -241,6 +250,8 @@ export async function handleToolsInvokeHttpRequest(
     agentSessionKey: sessionKey,
     agentChannel: messageChannel ?? undefined,
     agentAccountId: accountId,
+    agentTo,
+    agentThreadId,
     config: cfg,
     pluginToolAllowlist: collectExplicitAllowlist([
       profilePolicy,
@@ -308,8 +319,9 @@ export async function handleToolsInvokeHttpRequest(
     const result = await (tool as any).execute?.(`http-${Date.now()}`, toolArgs);
     sendJson(res, 200, { ok: true, result });
   } catch (err) {
-    if (isToolInputError(err)) {
-      sendJson(res, 400, {
+    const inputStatus = resolveToolInputErrorStatus(err);
+    if (inputStatus !== null) {
+      sendJson(res, inputStatus, {
         ok: false,
         error: { type: "tool_error", message: getErrorMessage(err) || "invalid tool arguments" },
       });
